@@ -4,7 +4,10 @@ Intended to be used for user scripts.
 
 ### Basic usage
 
-Include the file in your user script and call the `attach()` method.
+Include the file in your user script and call the `IdlescapeListener.attach()` method. This will create an `EventTarget`
+at `window.IdlescapeListener.messages` which your user script can use to watch for SocketIO messages.
+
+Invoke in your user script:
 
 ```javascript
 // ==UserScript==
@@ -13,11 +16,27 @@ Include the file in your user script and call the `attach()` method.
 // ...
 // ==/UserScript==
 
+// either
 IdlescapeListener.attach();
 
 // or
-
-(function() {
+(function () {
     IdlescapeListener.attach();
 })();
+
+// the attach method will work pre- or post-load
+```
+
+Then in your code, add an event listener:
+
+```javascript
+function yourHandler(message) {
+    console.log(message.event, message.data);
+}
+
+window.IdlescapeListener.messages.addEventListener("message", yourHandler(message))
+// or
+window.IdlescapeListener.messages.addEventListener("message", (m) => {
+    console.log(m.event, m.data);
+})
 ```
