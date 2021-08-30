@@ -12,12 +12,16 @@ class IdlescapeMessageEvent extends Event {
     }
 }
 
-class IdlescapeListener {
+class IdlescapeSocketListener {
+    constructor() {
+        this.attached = false;
+        this.messages = new IdlescapeMessages();
+        this.debugEnabled = false;
+    }
+
     static attach() {
         if (typeof window.IdlescapeListener === "undefined") {
-            window.IdlescapeListener = new IdlescapeListener();
-            window.IdlescapeListener.messages = new IdlescapeMessages();
-            window.IdlescapeListener.debugEnabled = false;
+            window.IdlescapeListener = new IdlescapeSocketListener();
             window.IdlescapeListener.interceptXHR();
             window.IdlescapeListener.interceptWebSocket();
         } else if (!(window.IdlescapeListener instanceof IdlescapeListener)) {
@@ -47,9 +51,9 @@ class IdlescapeListener {
 
     interceptXHR() {
         let self = this;
-        if (typeof XMLHttpRequest.prototype._open === "undefined") {
-            XMLHttpRequest.prototype._open = XMLHttpRequest.prototype.open;
-        }
+
+        XMLHttpRequest.prototype._open_default =
+            typeof XMLHttpRequest.prototype._open === "undefined" ? XMLHttpRequest.prototype.open : XMLHttpRequest.prototype._open;
 
         XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
             // Only care about socket.io fallback XHR messages
@@ -61,23 +65,35 @@ class IdlescapeListener {
                     });
                 });
             }
-            return XMLHttpRequest.prototype._open.apply(this, arguments);
+            return XMLHttpRequest.prototype._open_default.apply(this, arguments);
         };
         console.info("IdlescapeListener: intercepting socket.io XHR fallback messages");
     }
 
     interceptWebSocket() {
         let self = this;
-        if (typeof WebSocket.prototype._send === "undefined") {
-            WebSocket.prototype._send = WebSocket.prototype.send;
-        }
-        WebSocket.prototype.send = function (data) {
-            this._send(data);
-            this.addEventListener("message", (e) => self.messageEventHandler(e));
-            this.addEventListener("close", () => self.closeEventHandler());
-            console.info("IdlescapeListener: intercepting socket.io WebSocket messages");
-            this.send = this._send;
+
+        let sendOverride = function (data) {
+            this._send_default(data);
+
+            if (!self.attached) {
+                this.addEventListener("message", (e) => self.messageEventHandler(e));
+                this.addEventListener("close", (e) => self.closeEventHandler(e));
+                self.attached = true;
+                console.info("IdlescapeListener: intercepting socket.io WebSocket messages");
+            }
+
+            this.send = this._send_default;
         };
+
+        if (typeof WebSocket.prototype._send == "undefined") {
+            WebSocket.prototype._send_default = WebSocket.prototype.send;
+            WebSocket.prototype.send = sendOverride;
+            WebSocket.prototype._send = sendOverride;
+        } else {
+            WebSocket.prototype._send_default = WebSocket.prototype._send;
+            WebSocket.prototype._send = sendOverride;
+        }
     }
 
     messageEventHandler(event) {
@@ -91,6 +107,7 @@ class IdlescapeListener {
 
     closeEventHandler() {
         console.info("IdlescapeListener: WebSocket closed, intercepting new connection");
+        this.attached = false;
         this.interceptWebSocket();
     }
 

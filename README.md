@@ -4,7 +4,7 @@ Intended to be used for user scripts.
 
 ### Basic usage
 
-Include the file in your user script and call the `IdlescapeListener.attach()` method. This will create an `EventTarget`
+Include the file in your user script and call the `IdlescapeSocketListener.attach()` method. This will create an `EventTarget`
 at `window.IdlescapeListener.messages` which your user script can use to watch for SocketIO messages.
 
 Invoke in your user script:
@@ -17,11 +17,11 @@ Invoke in your user script:
 // ==/UserScript==
 
 // either
-IdlescapeListener.attach();
+IdlescapeSocketListener.attach();
 
 // or
 (function () {
-    IdlescapeListener.attach();
+    IdlescapeSocketListener.attach();
 })();
 
 // the attach method will work pre- or post-load
