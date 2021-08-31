@@ -12,6 +12,18 @@ class IdlescapeMessageEvent extends Event {
     }
 }
 
+class IdlescapeDisconnectedEvent extends Event {
+    constructor() {
+        super("disconnected");
+    }
+}
+
+class IdlescapeConnectedEvent extends Event {
+    constructor() {
+        super("connected");
+    }
+}
+
 class IdlescapeSocketListener {
     constructor() {
         this.attached = false;
@@ -80,6 +92,7 @@ class IdlescapeSocketListener {
                 this.addEventListener("message", (e) => self.messageEventHandler(e));
                 this.addEventListener("close", (e) => self.closeEventHandler(e));
                 self.attached = true;
+                self.messages.dispatchEvent(new IdlescapeConnectedEvent());
                 console.info("IdlescapeListener: intercepting socket.io WebSocket messages");
             }
 
@@ -108,6 +121,7 @@ class IdlescapeSocketListener {
     closeEventHandler() {
         console.info("IdlescapeListener: WebSocket closed, intercepting new connection");
         this.attached = false;
+        this.messages.dispatchEvent(new IdlescapeDisconnectedEvent());
         this.interceptWebSocket();
     }
 
