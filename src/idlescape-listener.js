@@ -12,6 +12,14 @@ class IdlescapeMessageEvent extends Event {
     }
 }
 
+class IdlescapeSendEvent extends Event {
+    constructor(event, data) {
+        super("send");
+        this.event = event;
+        this.data = data;
+    }
+}
+
 class IdlescapeDisconnectedEvent extends Event {
     constructor() {
         super("disconnected");
@@ -86,6 +94,11 @@ class IdlescapeSocketListener {
         let self = this;
 
         let sendOverride = function (data) {
+            self.messageEventHandler(data, "send");
+            this._send_default(data);
+        };
+
+        let sendIntercept = function (data) {
             this._send_default(data);
 
             if (!self.attached) {
@@ -96,26 +109,37 @@ class IdlescapeSocketListener {
                 console.info("IdlescapeListener: intercepting socket.io WebSocket messages");
             }
 
-            this.send = this._send_default;
+            this.send = sendOverride;
         };
 
         if (typeof WebSocket.prototype._send == "undefined") {
             WebSocket.prototype._send_default = WebSocket.prototype.send;
-            WebSocket.prototype.send = sendOverride;
+            WebSocket.prototype.send = sendIntercept;
             WebSocket.prototype._send = sendOverride;
         } else {
             WebSocket.prototype._send_default = WebSocket.prototype._send;
-            WebSocket.prototype._send = sendOverride;
+            WebSocket.prototype._send = sendIntercept;
         }
     }
 
-    messageEventHandler(event) {
-        let message = this.extractMessage(event);
+    messageEventHandler(event, eventType) {
+        let message = this.extractMessage(event, eventType);
         if (message === false) {
             return;
         }
 
-        this.messages.dispatchEvent(message);
+        let messageEvent;
+        switch (eventType) {
+            case "send":
+                messageEvent = new IdlescapeSendEvent(message.event, message.data);
+                break;
+            case "message":
+            default:
+                messageEvent = new IdlescapeMessageEvent(message.event, message.data);
+                break;
+        }
+
+        this.messages.dispatchEvent(messageEvent);
     }
 
     closeEventHandler() {
@@ -125,12 +149,12 @@ class IdlescapeSocketListener {
         this.interceptWebSocket();
     }
 
-    extractMessage(e) {
+    extractMessage(event) {
         let data;
-        if (typeof e === "object" && "data" in e) {
-            data = e.data;
+        if (typeof event === "object" && "data" in event) {
+            data = event.data;
         } else {
-            data = e;
+            data = event;
         }
 
         if (typeof data !== "string" && !(data instanceof String)) {
@@ -140,16 +164,16 @@ class IdlescapeSocketListener {
 
         let message = (data.match(/^[0-9]+(\[.+)$/) || [])[1];
         if (message == null) {
-            this.debug("IdlescapeListener: event data does not match message regex", e);
+            this.debug("IdlescapeListener: event data does not match message regex", event);
             return false;
         }
 
         let parsedMessage = JSON.parse(message);
         if (!Array.isArray(parsedMessage) && parsedMessage.length !== 2) {
-            this.debug("IdlescapeListener: event message length not 2", message, e);
+            this.debug("IdlescapeListener: event message length not 2", message, event);
             return false;
         }
 
-        return new IdlescapeMessageEvent(parsedMessage[0], parsedMessage[1]);
+        return { event: parsedMessage[0], data: parsedMessage[1] };
     }
 }
