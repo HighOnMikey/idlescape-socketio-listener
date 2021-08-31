@@ -27,16 +27,23 @@ IdlescapeSocketListener.attach();
 // the attach method will work pre- or post-load
 ```
 
-Then in your code, add an event listener:
+Then in your code add an event listener:
 
 ```javascript
+// event handler callback
 function yourHandler(message) {
     console.log(message.event, message.data);
 }
 
-window.IdlescapeListener.messages.addEventListener("message", yourHandler(message))
-// or
+// messages received from the server
+window.IdlescapeListener.messages.addEventListener("message", yourHandler(message));
+// messages sent from the client
+window.IdlescapeListener.messages.addEventListener("send", yourHandler(message));
+
+// or you can create the callback in the addEventListener method
 window.IdlescapeListener.messages.addEventListener("message", (m) => {
     console.log(m.event, m.data);
 })
+
+// etc
 ```
