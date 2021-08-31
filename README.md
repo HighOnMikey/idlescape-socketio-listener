@@ -47,3 +47,16 @@ window.IdlescapeListener.messages.addEventListener("message", (m) => {
 
 // etc
 ```
+
+You are also able to listen for WebSocket disconnected and connected events, allowing you to reload or reattach components
+in your extension. Example:
+
+```javascript
+window.IdlescapeListener.messages.addEventListener("connected", () => {
+    yourObject.recreateObservers();
+});
+
+window.IdlescapeListener.messages.addEventListener("disconnected", () => {
+    yourObject.cleanup();
+})
+```
