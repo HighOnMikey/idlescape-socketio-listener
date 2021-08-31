@@ -169,8 +169,8 @@ class IdlescapeSocketListener {
         }
 
         let parsedMessage = JSON.parse(message);
-        if (!Array.isArray(parsedMessage) && parsedMessage.length !== 2) {
-            this.debug("IdlescapeListener: event message length not 2", message, event);
+        if (!Array.isArray(parsedMessage) || parsedMessage.length === 0) {
+            this.debug("IdlescapeListener: parsed message not an array or is empty", message, event);
             return false;
         }
 
