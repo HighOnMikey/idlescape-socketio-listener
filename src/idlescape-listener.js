@@ -44,8 +44,6 @@ class IdlescapeSocketListener {
             window.IdlescapeListener = new IdlescapeSocketListener();
             window.IdlescapeListener.interceptXHR();
             window.IdlescapeListener.interceptWebSocket();
-        } else if (!(window.IdlescapeListener instanceof IdlescapeSocketListener)) {
-            console.error("window.IdlescapeListener is already defined but is not the correct type");
         }
     }
 
