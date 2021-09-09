@@ -60,3 +60,19 @@ window.IdlescapeListener.messages.addEventListener("disconnected", () => {
     yourObject.cleanup();
 })
 ```
+
+### Debugging
+
+While developing a script/extension, it may be helpful to see debug messages
+
+### Event Index
+
+| Event | Description |
+|---|---|
+| `message` | WebSocket message received from the game server |
+| `send` | WebSocket message sent to the game server |
+| `connected` | Listener was reattached to a new WebSocket connection |
+| `disconnected` | The WebSocket connection was closed and the listener has been detached |
+
+### Credits
+
