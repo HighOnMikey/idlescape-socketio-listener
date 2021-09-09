@@ -108,13 +108,18 @@ class IdlescapeSocketListener {
             this.send = sendOverride;
         };
 
-        if (typeof WebSocket.prototype._send == "undefined") {
+        if (typeof WebSocket.prototype._send === "undefined" && typeof WebSocket.prototype._send_default === "undefined") {
+            // No other intercepts exist
             WebSocket.prototype._send_default = WebSocket.prototype.send;
             WebSocket.prototype.send = sendIntercept;
-            WebSocket.prototype._send = sendOverride;
-        } else {
+            WebSocket.prototype._send = sendIntercept;
+        } else if (typeof WebSocket.prototype._send_default === "undefined") {
+            // Assuming another script is using _send so we intercept the chain
             WebSocket.prototype._send_default = WebSocket.prototype._send;
             WebSocket.prototype._send = sendIntercept;
+        } else {
+            // Reconnecting
+            WebSocket.prototype.send = sendIntercept;
         }
     }
 
