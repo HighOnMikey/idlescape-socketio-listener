@@ -36,7 +36,8 @@ class IdlescapeSocketListener {
     constructor() {
         this.attached = false;
         this.messages = new IdlescapeMessages();
-        this.debugEnabled = false;
+        this.debugErrors = false;
+        this.debugValid = false;
     }
 
     static attach() {
@@ -47,24 +48,21 @@ class IdlescapeSocketListener {
         }
     }
 
-    toggleDebug(value) {
-        if (typeof value === "boolean") {
-            this.debugEnabled = value;
-        } else {
-            this.debugEnabled = !this.debugEnabled;
-        }
-        console.info(`IdlescapeListener: debug enabled: ${this.debugEnabled}`);
+    setDebug(enableErrors = false, enableValid = false) {
+        this.debugErrors = enableErrors;
+        this.debugValid = enableValid;
+        console.info(`IdlescapeListener: debug errors: ${this.debugErrors}, debug valid: ${this.debugValid}`);
     }
 
-    debug(message, ...args) {
-        if (!this.debugEnabled) {
-            return;
+    debug(valid, message, ...args) {
+        if (this.debugErrors && !valid) {
+            console.debug(message);
+            args.forEach((a) => {
+                console.debug(a);
+            });
+        } else if (this.debugValid) {
+            console.debug({ event: message[0], data: message[1] });
         }
-
-        console.debug(message);
-        args.forEach((a) => {
-            console.debug(a);
-        });
     }
 
     interceptXHR() {
@@ -156,21 +154,22 @@ class IdlescapeSocketListener {
         }
 
         if (typeof data !== "string" && !(data instanceof String)) {
-            this.debug("IdlescapeListener: event data is not a string", data);
+            this.debug(false, "IdlescapeListener: event data is not a string", event);
             return false;
         }
 
         let message = (data.match(/^[0-9]+(\[.+)$/) || [])[1];
         if (message == null) {
-            this.debug("IdlescapeListener: event data does not match message regex", event);
+            this.debug(false, "IdlescapeListener: event data does not match message regex", event);
             return false;
         }
 
         let parsedMessage = JSON.parse(message);
         if (!Array.isArray(parsedMessage) || parsedMessage.length === 0) {
-            this.debug("IdlescapeListener: parsed message not an array or is empty", message, event);
+            this.debug(false, "IdlescapeListener: parsed message not an array or is empty", event);
             return false;
         }
+        this.debug(true, parsedMessage);
 
         return { event: parsedMessage[0], data: parsedMessage[1] };
     }
