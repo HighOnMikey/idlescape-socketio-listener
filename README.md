@@ -63,7 +63,16 @@ window.IdlescapeListener.messages.addEventListener("disconnected", () => {
 
 ### Debugging
 
-While developing a script/extension, it may be helpful to see debug messages
+While developing a script/extension, it may be helpful to see debug messages:
+
+```javascript
+let enableInvalidMessageDebug = true;
+let enableValidMessageDebug = true;
+window.IdlescapeListener.setDebug(enableInvalidMessageDebug, enableValidMessageDebug);
+```
+
+Invalid messages are messages that did not fully pass the `extractMessage()` checks. Valid messages are all valid messages
+sent/received to/from the game server.
 
 ### Event Index
 
